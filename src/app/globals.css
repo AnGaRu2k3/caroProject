@@ -4,18 +4,17 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --background-start-rgb: 48, 120, 191; /* Màu xanh đậm cho màu nền bắt đầu */
+  --background-end-rgb: 48, 120, 191; /* Màu xanh đậm cho màu nền kết thúc */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --background-start-rgb: 64, 64, 64; /* Màu nền bắt đầu khi dark mode (xám đậm) */
+    --background-end-rgb: 64, 64, 64; /* Màu nền kết thúc khi dark mode (xám nhạt) */
   }
 }
-
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
