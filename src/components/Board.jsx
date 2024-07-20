@@ -1,29 +1,27 @@
-'use client'
+
 import React, { useState, useEffect } from 'react';
 import Square from "./Square"
 import PlayerCard from "./PlayerCard"
-import { io } from 'socket.io-client';
-const socket = io('http://localhost:3001');
+import { useSocket } from '@/app/socket';
 
-const Board = ({gameId}) => {
-    
+const Board = ({ gameId, player, opponent }) => {
     const boardSize = 20
+    const socket = useSocket();
     const [squares, setSquares] = useState(Array(boardSize * boardSize).fill(null));
     const [xIsNext, setXIsNext] = useState(true);
     const [winner, setWinner] = useState(null);
     const directions = [-boardSize, boardSize, -1, 1, //up down left right 
     -boardSize - 1, boardSize + 1, -boardSize + 1, boardSize - 1] // upleft  downright upright downleft
     useEffect(() => {
-        console.log("Component mounted, gameId:", gameId);
-        socket.emit('get_room_information', gameId);
-        socket.on('room_information', (data) => {
-            console.log(data);
-            // updatePlayerCards(data);
+        socket.on('move_made', ({ squares, xIsNext }) => {
+            setSquares(squares);
+            setXIsNext(xIsNext);
         });
+
         return () => {
-            socket.off('room_information');
+            socket.off('move_made');
         };
-    }, [gameId]); 
+    }, [socket]);
     const calculateWinner = (i, value) => {
         console.log(value)
         console.log(i)
@@ -54,15 +52,13 @@ const Board = ({gameId}) => {
 
     };
     const handleClick = (i) => {
+        console.log(player, xIsNext)
+        if (player.isX == xIsNext) return;
         if (squares[i] != null) return;
         const newSquares = squares.slice();
         newSquares[i] = xIsNext ? 'X' : 'O';
-        setSquares(newSquares);
-        if (calculateWinner(i, (xIsNext) ? 'X' : 'O')) {
-            console.log("winner is ", xIsNext)
-            setWinner((xIsNext) ? 'X' : 'O')
-        }
-        setXIsNext(!xIsNext);
+        socket.emit('make_move', { gameId, squares: newSquares, xIsNext: !xIsNext });
+
     };
     const renderSquare = (i) => {
         return <Square value={squares[i]} key={i} onClick={() => handleClick(i)} />;
@@ -85,13 +81,16 @@ const Board = ({gameId}) => {
         }
         return rows;
     };
-
+    const handleCountdownComplete = () => {
+        if (player.isX == xIsNext) setWinner(1)
+        else setWinner(0)
+    }
     return (
         <>
             <div className="relative flex">
                 {/* Component bên trái */}
                 <div className="flex-1 ">
-                    <PlayerCard />
+                    <PlayerCard info={player} isCurrentTurn={player?.isX != xIsNext} onCountDownComplete={handleCountdownComplete} />
                 </div>
 
                 <div className={`relative ${winner ? 'opacity-50' : ''}`}>
@@ -100,14 +99,23 @@ const Board = ({gameId}) => {
 
                 {/* Component bên phải */}
                 <div className="flex-1">
-                    <PlayerCard />
+                    <PlayerCard info={opponent} isCurrentTurn={player?.isX == xIsNext} onCountDownComplete={handleCountdownComplete}  />
                 </div>
             </div>
-            {winner && (
+            {winner == 1 && (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-white bg-opacity-60 p-4">
                         <div className="text-4xl font-bold text-green-500">
-                            {winner} is winning
+                            You win
+                        </div>
+                    </div>
+                </div>
+            )}
+            {winner == 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-white bg-opacity-60 p-4">
+                        <div className="text-4xl font-bold text-red-500">
+                            You lose
                         </div>
                     </div>
                 </div>

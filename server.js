@@ -17,7 +17,7 @@ let socketInfo = {};
 io.on('connection', (socket) => {
     console.log('a user connected');
     socket.on('join_game', (data) => {
-        console.log('Player joined with nickname:', data.nickname, 'and gender:', data.gender);
+        console.log('Player joined with nickname:', data.nickname, 'and gender:', data.gender, 'and socketi=Id: ', socket.id);
         socketInfo[socket.id] = {
             nickname: data.nickname,
             gender: data.gender
@@ -30,21 +30,45 @@ io.on('connection', (socket) => {
             joinRoom(room, socket);
         }
     });
+    socket.on('make_move', (data) => {
+        const { gameId, squares, xIsNext } = data;
+        const roomInfo = rooms[gameId];
+        console.log("room info is", roomInfo)
+        console.log("socketID info is", socket.id)
+        // exit(0)
+        const opponent = roomInfo.find(player => player.socketId !== socket.id);
+        if (opponent) {
+            io.to(opponent.socketId).emit('move_made', { squares, xIsNext });
+        }
+        socket.emit('move_made', { squares, xIsNext });
+    });
 
     socket.on('disconnect', () => {
         console.log('user disconnected');
         delete socketInfo[socket.id];
     });
-    socket.on('get_room_information', (data) => {
-        const roomInfo = rooms[data.gameId]
-        console.log(roomInfo);
-        socket.emit('room_information', roomInfo);
+    socket.on('get_room_information', (gameId) => {
+        const roomInfo = rooms[gameId];
+        const playersInfo = {};
+        const playerIndex = roomInfo.findIndex(player => player.socketId === socket.id);
+
+        
+        playersInfo.player = {
+            ...socketInfo[socket.id],
+            isX: roomInfo[playerIndex].isX
+        };
+        const opponentIndex = 1 - playerIndex;
+        playersInfo.opponent = {
+            ...socketInfo[roomInfo[opponentIndex].socketId],
+            isX: roomInfo[opponentIndex].isX
+        };
+        socket.emit('room_information', playersInfo);
     });
 });
 
 function findAvailableRoom() {
     for (const roomId in rooms) {
-        if (rooms[roomId].players.length === 1) {
+        if (rooms[roomId].length === 1) {
             return roomId;
         }
     }
@@ -52,18 +76,22 @@ function findAvailableRoom() {
 }
 function createRoom() {
     const roomId = Math.random().toString(36).substr(2, 9);
-    rooms[roomId] = { players: [] };
+    rooms[roomId] = [];
     return roomId;
 }
 function joinRoom(roomId, socket) {
-    rooms[roomId].players.push(socket.id);
+    if (rooms[roomId].length == 0) {
+        rooms[roomId].push({ "socketId": socket.id, "isX": 0 });
+    }
+    else rooms[roomId].push({ "socketId": socket.id, "isX": 1 });
     socket.emit('room_created', { roomId });
 
     // If room is full (2 players), start the game
-    if (rooms[roomId].players.length === 2) {
-        const players = rooms[roomId].players;
-        io.to(players[0]).emit('start_game', { roomId: roomId, opponentSocketId: players[1] });
-        io.to(players[1]).emit('start_game', { roomId: roomId, opponentSocketId: players[0] });
+    if (rooms[roomId].length === 2) {
+        const players = rooms[roomId];
+        
+        io.to(players[0].socketId).emit('start_game', { roomId: roomId, opponentSocketId: players[1].socketId });
+        io.to(players[1].socketId).emit('start_game', { roomId: roomId, opponentSocketId: players[0].socketId });
     }
 }
 const PORT = process.env.PORT || 3001;

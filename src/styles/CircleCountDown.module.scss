@@ -1,0 +1,59 @@
+@mixin font-serif($name, $size: false, $color: false, $fontStyle: false, $lineHeight: false, $weight: false) {
+  font-family: $name, sans-serif;
+  @if $size {
+    font-size: $size;
+  }
+  @if $color {
+    color: $color;
+  }
+  @if $fontStyle {
+    font-style: $fontStyle;
+  }
+  @if $lineHeight {
+    line-height: $lineHeight;
+  }
+  @if $weight {
+    font-weight: $weight;
+  }
+}
+
+.root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.seconds {
+  position: absolute;
+  // Remove this or adjust as needed if not using
+  // @include font-serif('Roboto', 16px, false, normal, 20px, 500);
+}
+
+.svg {
+  transform: rotate(90deg); /* Adjusted to start stroke from top */
+  overflow: visible;
+}
+
+.countDownContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.childrenContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Ensure clicks pass through */
+}
