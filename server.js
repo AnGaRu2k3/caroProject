@@ -31,16 +31,16 @@ io.on('connection', (socket) => {
         }
     });
     socket.on('make_move', (data) => {
-        const { gameId, squares, xIsNext } = data;
+        const { gameId, squares, xIsNext, i } = data;
         const roomInfo = rooms[gameId];
         console.log("room info is", roomInfo)
         console.log("socketID info is", socket.id)
         // exit(0)
         const opponent = roomInfo.find(player => player.socketId !== socket.id);
         if (opponent) {
-            io.to(opponent.socketId).emit('move_made', { squares, xIsNext });
+            io.to(opponent.socketId).emit('move_made', { squares, xIsNext, i });
         }
-        socket.emit('move_made', { squares, xIsNext });
+        socket.emit('move_made', { squares, xIsNext, i });
     });
 
     socket.on('disconnect', () => {

@@ -16,45 +16,47 @@ const CircleCountDown: FC<CircleCountDownProps> = ({
   strokeWidth,
   onComplete,
   strokeLinecap = 'round',
-  children,  
+  children,
 }) => {
   const radius = size / 2;
   const milliseconds = time * 1000;
   const circumference = size * Math.PI;
 
   const [countdown, setCountdown] = useState(milliseconds);
+  const [startTime, setStartTime] = useState(Date.now());
 
   const strokeDashoffset = circumference - (countdown / milliseconds) * circumference;
 
-  // 80% màu xanh lá và 20% màu đỏ
   const getColor = () => {
     const percentage = countdown / milliseconds;
-    const transitionPoint = 0.2; 
-  
+    const transitionPoint = 0.2;
+
     if (percentage > transitionPoint) {
-      const green = 238; 
-      const red = 0; 
+      const green = 238;
+      const red = 0;
       return `rgb(${red}, ${green}, 0)`;
     } else {
-      
-      const green = 0; 
-      const red = 238; 
+      const green = 0;
+      const red = 238;
       return `rgb(${red}, ${green}, 0)`;
     }
   };
-  
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (countdown > 0) {
-        setCountdown(countdown - 10);
-      } else {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(milliseconds - elapsed, 0);
+
+      setCountdown(remaining);
+
+      if (remaining <= 0) {
         clearInterval(interval);
         onComplete && onComplete();
       }
     }, 10);
+
     return () => clearInterval(interval);
-  }, [countdown]);
+  }, [milliseconds, startTime, onComplete]);
 
   return (
     <div className={styles.root} style={{ width: size, height: size }}>
