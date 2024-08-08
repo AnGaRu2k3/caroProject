@@ -16,8 +16,8 @@ export default function Home() {
     if (socket) {
       console.log(socket.id)
       // Lắng nghe sự kiện 'start_game'
-      socket.on('start_game', (data) => {
-        console.log(data)
+      socket.on('start_game', (data: { roomId: string; }) => {
+        
         router.push(`/game/${data.roomId}`);
       });
 

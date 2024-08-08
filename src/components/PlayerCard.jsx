@@ -18,8 +18,8 @@ const PlayerCard = ({ info, isCurrentTurn, onCountDownComplete}) => {
 
         <div className="relative w-48 h-48 flex items-center justify-center">
           {isCurrentTurn ? (
-            <CircleDownCircle time={5} size={180} stroke="#90ee90" strokeWidth={6} onComplete={onCountDownComplete}>
-              <img src={avatarSrc} className="rounded-full object-cover border-black w-40 h-40 absolute" alt="Avatar" />
+            <CircleDownCircle time={3} size={180} stroke="#90ee90" strokeWidth={6} onComplete={onCountDownComplete}>
+              <img src={avatarSrc} className="border- rounded-full object-cover border-black w-40 h-40 absolute" alt="Avatar" />
             </CircleDownCircle>
           ) : (
             <img src={avatarSrc} className="rounded-full object-cover border-black w-40 h-40 absolute" alt="Avatar" />

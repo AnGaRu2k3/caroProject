@@ -4,28 +4,37 @@ import Square from "./Square"
 import PlayerCard from "./PlayerCard"
 import { useSocket } from '@/app/socket';
 
-const Board = ({ gameId, player, opponent }) => {
+const Board = ({ gameId, player, opponent, onGameEnd, resetGame, winner }) => {
     const boardSize = 20
     const socket = useSocket();
     const [squares, setSquares] = useState(Array(boardSize * boardSize).fill(null));
     const [xIsNext, setXIsNext] = useState(false);
-    const [winner, setWinner] = useState(null);
+    
     const directions = [-boardSize, boardSize, -1, 1, //up down left right 
     -boardSize - 1, boardSize + 1, -boardSize + 1, boardSize - 1] // upleft  downright upright downleft
     useEffect(() => {
         socket.on('move_made', ({ squares, xIsNext, i }) => {
             setSquares(squares);
-            // calculateWinner(i, xIsNext == true ? 'O' : 'X', squares) 
             if (calculateWinner(i, xIsNext == true ? 'X' : 'O', squares) == true) {
-                if (player.isX == xIsNext) setWinner(1)
-                else setWinner(0)
+                onGameEnd(player.isX == xIsNext ? 1 : 0);
             }
             setXIsNext(xIsNext);
         });
+        
         return () => {
             socket.off('move_made');
         };
-    }, [socket, player]);
+    }, [socket, player, onGameEnd]);
+    useEffect(() => {
+        if (winner === null) {
+            resetBoard(); 
+        }
+    }, [winner]);
+    const resetBoard = () => {
+        console.log("RESETBOARD")
+        setSquares(Array(boardSize * boardSize).fill(null));
+        setXIsNext(false);
+    };
     const calculateWinner = (i, value, squares) => {
 
         console.log(i, value)
@@ -66,8 +75,8 @@ const Board = ({ gameId, player, opponent }) => {
         socket.emit('make_move', { gameId, squares: newSquares, xIsNext: !xIsNext, i: i });
 
     };
-    const renderSquare = (i) => {
-        return <Square value={squares[i]} key={i} onClick={() => handleClick(i)} />;
+    const renderSquare = (i) => {   
+        return <Square playerTurn={player?.isX != xIsNext}  value={squares[i]} key={i} onClick={() => handleClick(i)} player={player?.isX == true ? 'X': 'O'} />;
     };
     const renderRow = (rowIndex) => {
         const rowSquares = [];
@@ -88,8 +97,7 @@ const Board = ({ gameId, player, opponent }) => {
         return rows;
     };
     const handleCountdownComplete = () => {
-        if (player.isX == xIsNext) setWinner(1)
-        else setWinner(0)
+        onGameEnd(player.isX == xIsNext ? 1 : 0);
     }
     return (
         <>
@@ -108,39 +116,7 @@ const Board = ({ gameId, player, opponent }) => {
                     <PlayerCard info={opponent} isCurrentTurn={winner == null && player?.isX == xIsNext} onCountDownComplete={handleCountdownComplete}  />
                 </div>
             </div>
-            {winner == 1 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="flex flex-col bg-white bg-opacity-60 p-4 items-center justify-center">
-                        <div className="text-7xl font-bold text-green-500">
-                            You win
-                        </div>
-                        <button type="button" class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg
-                        text-sm px-5 py-2.5 text-center me-2 mb-2 mt-20 w-full">Play Again</button>
-                        <button type="button" class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg
-                        text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2 w-full">New Match</button>
-
-                    </div>
-                    
-
-                </div>
-            )}
-            {winner == 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="flex flex-col bg-white bg-opacity-60 p-4 items-center justify-center">
-                    <div className="text-7xl font-bold text-red-500">
-                        You lose
-                    </div>
-                    <button type="button" class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg
-                    text-sm px-5 py-2.5 text-center me-2 mb-2 mt-20 w-full">Play Again</button>
-                    <button type="button" class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg
-                    text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2 w-full">New Match</button>
-
-                </div>
-                
-
-            </div>
-            )}
-
+            
         </>
     );
 };

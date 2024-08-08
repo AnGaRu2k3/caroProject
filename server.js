@@ -32,6 +32,7 @@ io.on('connection', (socket) => {
     });
     socket.on('make_move', (data) => {
         const { gameId, squares, xIsNext, i } = data;
+        console.log(gameId)
         const roomInfo = rooms[gameId];
         console.log("room info is", roomInfo)
         console.log("socketID info is", socket.id)
@@ -42,7 +43,27 @@ io.on('connection', (socket) => {
         }
         socket.emit('move_made', { squares, xIsNext, i });
     });
-
+    socket.on('player_ready', (gameId) => {
+        const room = rooms[gameId]; 
+        console.log(room);
+        if (room) {
+            const opponent = room.find(player => player.socketId !== socket.id);
+            console.log(opponent.socketId)
+            if (opponent) {
+                io.to(opponent.socketId).emit('opponent_ready');
+            }
+        }
+    });
+    
+    socket.on('cancel_ready', (gameId) => {
+        const room = rooms[gameId]; 
+        if (room) {
+            const opponent = room.find(player => player.socketId !== socket.id);
+            if (opponent) {
+                io.to(opponent.socketId).emit('opponent_cancel');
+            }
+        }
+    });
     socket.on('disconnect', () => {
         console.log('user disconnected');
         delete socketInfo[socket.id];
@@ -52,14 +73,16 @@ io.on('connection', (socket) => {
         const playersInfo = {};
         const playerIndex = roomInfo.findIndex(player => player.socketId === socket.id);
 
-        
+
         playersInfo.player = {
             ...socketInfo[socket.id],
+            socketId: socket.id,
             isX: roomInfo[playerIndex].isX
         };
         const opponentIndex = 1 - playerIndex;
         playersInfo.opponent = {
             ...socketInfo[roomInfo[opponentIndex].socketId],
+            socketId: roomInfo[opponentIndex].socketId,
             isX: roomInfo[opponentIndex].isX
         };
         socket.emit('room_information', playersInfo);
@@ -89,7 +112,7 @@ function joinRoom(roomId, socket) {
     // If room is full (2 players), start the game
     if (rooms[roomId].length === 2) {
         const players = rooms[roomId];
-        
+
         io.to(players[0].socketId).emit('start_game', { roomId: roomId, opponentSocketId: players[1].socketId });
         io.to(players[1].socketId).emit('start_game', { roomId: roomId, opponentSocketId: players[0].socketId });
     }
